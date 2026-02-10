@@ -26,19 +26,13 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
             transition={{ duration: 0.3 }}
             className="relative h-full w-full"
           >
-            {/* Using a placeholder for now as we don't have actual images in the public folder yet */}
-            <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/50 text-white/50">
-               <span className="text-lg">Image {selectedImage + 1} Placeholder</span>
-               {/* 
-               <Image 
-                 src={displayImages[selectedImage]} 
-                 alt={`Product View ${selectedImage + 1}`}
-                 fill
-                 className="object-cover"
-                 priority
-               />
-               */}
-            </div>
+            <Image 
+              src={displayImages[selectedImage]} 
+              alt={`Product View ${selectedImage + 1}`}
+              fill
+              className="object-cover"
+              priority
+            />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -54,17 +48,12 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                 : "border-white/10 opacity-60 hover:opacity-100"
             }`}
           >
-             <div className="absolute inset-0 flex items-center justify-center bg-neutral-800 text-xs text-white/30">
-              Thumb {index + 1}
-              {/*
-              <Image 
-                src={img} 
-                alt={`Thumbnail ${index + 1}`}
-                fill
-                className="object-cover"
-              />
-              */}
-            </div>
+             <Image 
+               src={img} 
+               alt={`Thumbnail ${index + 1}`}
+               fill
+               className="object-cover"
+             />
           </button>
         ))}
       </div>

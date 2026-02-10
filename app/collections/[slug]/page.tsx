@@ -5,7 +5,13 @@ import SortDropdown from "@/components/Collection/SortDropdown";
 import ProductCard from "@/components/Collection/ProductCard";
 import { collectionData } from "@/data/collectionData";
 
-export default function CollectionPage() {
+export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const displayTitle = slug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
   return (
     <main className="min-h-screen bg-neutral-50 selection:bg-orange-500/30">
       <Navbar />
@@ -13,7 +19,7 @@ export default function CollectionPage() {
       <div className="mx-auto max-w-7xl px-4 pt-32 pb-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-            <h1 className="mb-4 text-4xl font-light text-neutral-900">Quick Ship Fireplaces</h1>
+            <h1 className="mb-4 text-4xl font-light text-neutral-900">{displayTitle} Fireplaces</h1>
             <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-orange-600">
                 <span>&lt; FIREPLACE</span>
             </div>

@@ -5,12 +5,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Product } from "@/data/collectionData";
+import { useComparison } from "@/context/ComparisonContext";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const { addToCompare, removeFromCompare, isInComparison } = useComparison();
+  const isComparing = isInComparison(product.id);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -47,8 +51,22 @@ export default function ProductCard({ product }: ProductCardProps) {
           ))}
         </div>
 
+        {/* Compare Button */}
+        <button 
+          onClick={(e) => {
+             e.preventDefault(); 
+             isComparing ? removeFromCompare(product.id) : addToCompare(product);
+          }}
+          className={`absolute right-14 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
+            isComparing ? "bg-orange-600 text-white" : "bg-white/80 text-neutral-600 hover:bg-white hover:text-orange-500"
+          }`}
+          title={isComparing ? "Remove from comparison" : "Add to comparison"}
+        >
+           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+        </button>
+
         {/* Wishlist Button */}
-        <button className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-neutral-600 backdrop-blur-sm transition-all hover:bg-white hover:text-red-500">
+        <button className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-neutral-600 backdrop-blur-sm transition-all hover:bg-white hover:text-red-500">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"

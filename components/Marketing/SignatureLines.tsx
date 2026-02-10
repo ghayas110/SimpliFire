@@ -9,37 +9,37 @@ const lines = [
     title: "Allusion Slim",
     desc: "Recessed linear design. Minimalist and sleek.",
     color: "bg-zinc-200", 
-    href: "/collections/quick-ship",
+    href: "/product/allusion-slim",
   },
   {
     title: "Allusion Platinum",
     desc: "Linear wall-mount. Crystal media bed.",
     color: "bg-zinc-300", 
-    href: "/collections/quick-ship",
+    href: "/product/allusion-platinum",
   },
   {
     title: "The Scion",
     desc: "Built-in clean face design. Seamless finish.",
     color: "bg-zinc-200",
-    href: "/collections/quick-ship",
+    href: "/product/scion-trinity",
   },
   {
     title: "Format Wall Mount",
     desc: "Floating mantel style. Minimalist aesthetic.",
     color: "bg-zinc-300",
-    href: "/collections/quick-ship",
+    href: "/product/format-wall-mount",
   },
   {
     title: "Forum",
     desc: "Outdoor electric fireplace. Weather resistant.",
     color: "bg-zinc-200",
-    href: "/collections/quick-ship",
+    href: "/product/forum-outdoor",
   },
   {
     title: "Inception Insert",
     desc: "Digital Spark technology. Authentic brick interior.",
     color: "bg-zinc-300",
-    href: "/collections/quick-ship",
+    href: "/product/inception-insert",
   },
 ];
 
