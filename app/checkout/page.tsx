@@ -8,7 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { motion } from "framer-motion";
 
 export default function CheckoutPage() {
-  const { cart, cartTotal, clearCart } = useCart();
+  const { cart, cartTotal, shippingCost, totalWithShipping, clearCart } = useCart();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -214,7 +214,7 @@ export default function CheckoutPage() {
               disabled={isProcessing}
               className="w-full rounded-full bg-orange-600 py-4 font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:bg-orange-700 hover:shadow-orange-500/50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isProcessing ? "Processing..." : `Pay $${cartTotal.toFixed(2)}`}
+              {isProcessing ? "Processing..." : `Pay $${totalWithShipping.toFixed(2)}`}
             </button>
           </form>
         </div>
@@ -265,7 +265,9 @@ export default function CheckoutPage() {
             </div>
             <div className="flex justify-between text-sm text-neutral-600">
               <span>Shipping</span>
-              <span className="font-medium text-green-600">Free</span>
+              <span className={shippingCost === 0 ? "font-medium text-green-600" : "font-medium text-neutral-900"}>
+                {shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}`}
+              </span>
             </div>
             <div className="flex justify-between text-sm text-neutral-600">
               <span>Taxes (Estimated)</span>
@@ -279,7 +281,7 @@ export default function CheckoutPage() {
               <span className="mr-1 text-xs font-normal text-neutral-500">
                 USD
               </span>
-              ${cartTotal.toFixed(2)}
+              ${totalWithShipping.toFixed(2)}
             </span>
           </div>
         </div>

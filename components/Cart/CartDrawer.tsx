@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 
 export default function CartDrawer() {
-  const { cart, isOpen, closeCart, removeFromCart, updateQuantity, cartTotal } = useCart();
+  const { cart, isOpen, closeCart, removeFromCart, updateQuantity, cartTotal, shippingCost, totalWithShipping, FREE_SHIPPING_THRESHOLD } = useCart();
 
   // Prevent body scroll when cart is open
   useEffect(() => {
@@ -164,18 +164,49 @@ export default function CartDrawer() {
             {/* Footer */}
             {cart.length > 0 && (
               <div className="border-t border-neutral-100 bg-neutral-50 p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="text-neutral-500">Subtotal</span>
-                  <span className="text-xl font-bold text-neutral-900">
-                    ${cartTotal.toFixed(2)}
-                  </span>
+                {/* Free Shipping Progress */}
+                <div className="mb-6">
+                  <div className="flex justify-between text-xs font-medium mb-2">
+                    <span className={useCart().cartTotal >= useCart().FREE_SHIPPING_THRESHOLD ? "text-green-600" : "text-neutral-500"}>
+                      {useCart().cartTotal >= useCart().FREE_SHIPPING_THRESHOLD 
+                        ? "You've earned free shipping!" 
+                        : `Add $${(useCart().FREE_SHIPPING_THRESHOLD - useCart().cartTotal).toFixed(2)} more for free shipping`}
+                    </span>
+                    <span className="text-neutral-400">{Math.min(100, Math.round((useCart().cartTotal / useCart().FREE_SHIPPING_THRESHOLD) * 100))}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-neutral-200 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(100, (useCart().cartTotal / useCart().FREE_SHIPPING_THRESHOLD) * 100)}%` }}
+                      className={`h-full rounded-full ${useCart().cartTotal >= useCart().FREE_SHIPPING_THRESHOLD ? 'bg-green-500' : 'bg-orange-500'}`}
+                    />
+                  </div>
                 </div>
-                <p className="mb-6 text-xs text-neutral-400">
-                  Shipping and taxes calculated at checkout.
-                </p>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-neutral-500">Subtotal</span>
+                    <span className="text-neutral-900 font-medium">
+                      ${useCart().cartTotal.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-neutral-500">Shipping</span>
+                    <span className={useCart().shippingCost === 0 ? "text-green-600 font-medium" : "text-neutral-900 font-medium"}>
+                      {useCart().shippingCost === 0 ? "Free" : `$${useCart().shippingCost.toFixed(2)}`}
+                    </span>
+                  </div>
+                  <div className="pt-2 flex items-center justify-between border-t border-neutral-200">
+                    <span className="text-neutral-900 font-semibold">Total</span>
+                    <span className="text-xl font-bold text-neutral-900">
+                      ${useCart().totalWithShipping.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                
                 <Link
                   href="/checkout"
-                  onClick={closeCart}
+                  onClick={useCart().closeCart}
                   className="block w-full rounded-full bg-gradient-to-r from-orange-600 to-red-600 py-4 text-center font-medium text-white shadow-lg shadow-orange-500/30 transition-transform hover:scale-[1.02] hover:shadow-orange-500/50 active:scale-[0.98]"
                 >
                   Checkout

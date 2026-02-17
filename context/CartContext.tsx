@@ -21,9 +21,15 @@ interface CartContextType {
   clearCart: () => void;
   cartTotal: number;
   cartCount: number;
+  shippingCost: number;
+  totalWithShipping: number;
+  FREE_SHIPPING_THRESHOLD: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+export const FREE_SHIPPING_THRESHOLD = 99;
+export const FLAT_SHIPPING_RATE = 25;
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -99,6 +105,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
 
+  const shippingCost = cart.length > 0 && cartTotal > FREE_SHIPPING_THRESHOLD ? 0 : (cart.length > 0 ? FLAT_SHIPPING_RATE : 0);
+  const totalWithShipping = cartTotal + shippingCost;
+
   return (
     <CartContext.Provider
       value={{
@@ -112,6 +121,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         cartTotal,
         cartCount,
+        shippingCost,
+        totalWithShipping,
+        FREE_SHIPPING_THRESHOLD,
       }}
     >
       {children}

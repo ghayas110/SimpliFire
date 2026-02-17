@@ -5,6 +5,7 @@ import SmoothScroll from "@/components/SmoothScroll";
 import { CartProvider } from "@/context/CartContext";
 import { ComparisonProvider } from "@/context/ComparisonContext";
 import ComparisonBar from "@/components/Comparison/ComparisonBar";
+import ChatWidget from "@/components/Marketing/ChatWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
             <SmoothScroll />
             {children}
             <ComparisonBar />
+            <ChatWidget />
           </ComparisonProvider>
         </CartProvider>
       </body>
