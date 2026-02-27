@@ -14,10 +14,13 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { createClient } from "@/utils/supabase/client";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const supabase = createClient();
 
@@ -82,6 +85,129 @@ export default function AdminDashboardPage() {
     setLoading(false);
   };
 
+  const handleExportReport = async () => {
+    setExporting(true);
+    try {
+      const doc = new jsPDF();
+      const now = new Date();
+      const dateString = now.toLocaleDateString();
+      const timeString = now.toLocaleTimeString();
+
+      // Title
+      doc.setFontSize(20);
+      doc.text("SimpliFire Dashboard Report", 14, 22);
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${dateString} at ${timeString}`, 14, 30);
+
+      // Section 1: Dashboard Summary
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text("Dashboard Summary", 14, 45);
+      
+      const summaryData = [
+        ["Total Revenue", `$${stats.totalRevenue.toFixed(2)}`],
+        ["Total Products", stats.totalProducts.toString()],
+        ["Total Orders", stats.totalOrders.toString()],
+        ["Orders Pending", stats.pendingOrders.toString()],
+        ["Orders Delivered", stats.deliveredOrders.toString()],
+        ["Orders Today", stats.todayOrders.toString()],
+        ["Orders This Month", stats.thisMonthOrders.toString()]
+      ];
+
+      autoTable(doc, {
+        startY: 50,
+        head: [['Metric', 'Value']],
+        body: summaryData,
+        theme: 'striped',
+        headStyles: { fillColor: [249, 115, 22] } // Orange-500
+      });
+
+      // Section 2: Today's Orders
+      const { data: todayOrdersData } = await supabase
+        .from('orders')
+        .select('id, total_amount, status, created_at')
+        .gte('created_at', new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString())
+        .order('created_at', { ascending: false });
+
+      doc.addPage();
+      doc.setFontSize(16);
+      doc.text("Today's Orders", 14, 22);
+
+      if (todayOrdersData && todayOrdersData.length > 0) {
+        autoTable(doc, {
+          startY: 30,
+          head: [['Order ID', 'Amount', 'Status', 'Date']],
+          body: todayOrdersData.map(o => [
+            o.id.split('-')[0].toUpperCase(),
+            `$${Number(o.total_amount).toFixed(2)}`,
+            o.status,
+            new Date(o.created_at).toLocaleString()
+          ]),
+          headStyles: { fillColor: [249, 115, 22] }
+        });
+      } else {
+        doc.setFontSize(12);
+        doc.text("No orders found for today.", 14, 35);
+      }
+
+      // Section 3: All Products
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('id, name, price, stock_quantity, category')
+        .order('name');
+
+      doc.addPage();
+      doc.setFontSize(16);
+      doc.text("All Products", 14, 22);
+
+      if (productsData && productsData.length > 0) {
+        autoTable(doc, {
+          startY: 30,
+          head: [['Name', 'Category', 'Price', 'Stock']],
+          body: productsData.map(p => [
+            p.name,
+            p.category || 'N/A',
+            `$${Number(p.price).toFixed(2)}`,
+            p.stock_quantity?.toString() || '0'
+          ]),
+          headStyles: { fillColor: [249, 115, 22] }
+        });
+      }
+
+      // Section 4: All Orders
+      const { data: allOrdersData } = await supabase
+        .from('orders')
+        .select('id, total_amount, status, created_at')
+        .order('created_at', { ascending: false });
+
+      doc.addPage();
+      doc.setFontSize(16);
+      doc.text("All Orders History", 14, 22);
+
+      if (allOrdersData && allOrdersData.length > 0) {
+        autoTable(doc, {
+          startY: 30,
+          head: [['Order ID', 'Amount', 'Status', 'Date']],
+          body: allOrdersData.map(o => [
+            o.id.split('-')[0].toUpperCase(),
+            `$${Number(o.total_amount).toFixed(2)}`,
+            o.status,
+            new Date(o.created_at).toLocaleString()
+          ]),
+          headStyles: { fillColor: [249, 115, 22] }
+        });
+      }
+
+      doc.save(`SimpliFire_Report_${now.toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export report. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) return <div className="py-20 text-center text-neutral-500">Loading Dashboard...</div>;
 
   const STATS_CARDS = [
@@ -103,8 +229,22 @@ export default function AdminDashboardPage() {
           <p className="text-neutral-500 text-sm">Welcome back, Admin. Here's your real-time performance.</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-5 py-2 rounded-full border border-neutral-200 bg-white text-neutral-700 text-sm font-medium hover:bg-neutral-50 transition shadow-sm">
-            Export Report
+          <button 
+            onClick={handleExportReport}
+            disabled={exporting}
+            className={clsx(
+              "px-5 py-2 rounded-full border border-neutral-200 bg-white text-neutral-700 text-sm font-medium hover:bg-neutral-50 transition shadow-sm flex items-center gap-2",
+              exporting && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            {exporting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-600 rounded-full animate-spin"></div>
+                Exporting...
+              </>
+            ) : (
+              "Export Report"
+            )}
           </button>
         </div>
       </div>

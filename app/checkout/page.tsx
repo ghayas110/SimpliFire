@@ -6,11 +6,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { motion } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
 
 export default function CheckoutPage() {
   const { cart, cartTotal, shippingCost, totalWithShipping, clearCart } = useCart();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const supabase = createClient();
 
   // Simple form state
   const [formData, setFormData] = useState({
@@ -34,14 +37,54 @@ export default function CheckoutPage() {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // 1. Get authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("You must be logged in to complete checkout.");
+      }
 
-    clearCart();
-    router.push("/checkout/success");
+      // 2. Create Order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          total_amount: totalWithShipping,
+          status: 'make it to proceed'
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // 3. Create Order Items
+      const orderItems = cart.map(item => ({
+        order_id: order.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        price_at_purchase: item.price
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // 4. Success handling
+      setIsSuccess(true);
+      clearCart();
+      router.push("/checkout/success");
+    } catch (error: any) {
+      console.error("Checkout failed:", error);
+      alert(error.message || "Checkout failed. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  if (cart.length === 0) {
+  if (cart.length === 0 && !isSuccess) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 px-4">
         <div className="text-center">
