@@ -1,13 +1,42 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
+import { createClient } from "@/utils/supabase/client";
 
 export default function CartDrawer() {
   const { cart, isOpen, closeCart, removeFromCart, updateQuantity, cartTotal, shippingCost, totalWithShipping, FREE_SHIPPING_THRESHOLD } = useCart();
+  const [session, setSession] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
+
+  const handleCheckout = () => {
+    if (session) {
+      closeCart();
+      router.push("/checkout");
+    } else {
+      setShowAuthModal(true);
+    }
+  };
 
   // Prevent body scroll when cart is open
   useEffect(() => {
@@ -167,18 +196,18 @@ export default function CartDrawer() {
                 {/* Free Shipping Progress */}
                 <div className="mb-6">
                   <div className="flex justify-between text-xs font-medium mb-2">
-                    <span className={useCart().cartTotal >= useCart().FREE_SHIPPING_THRESHOLD ? "text-green-600" : "text-neutral-500"}>
-                      {useCart().cartTotal >= useCart().FREE_SHIPPING_THRESHOLD 
+                    <span className={cartTotal >= FREE_SHIPPING_THRESHOLD ? "text-green-600" : "text-neutral-500"}>
+                      {cartTotal >= FREE_SHIPPING_THRESHOLD 
                         ? "You've earned free shipping!" 
-                        : `Add $${(useCart().FREE_SHIPPING_THRESHOLD - useCart().cartTotal).toFixed(2)} more for free shipping`}
+                        : `Add $${(FREE_SHIPPING_THRESHOLD - cartTotal).toFixed(2)} more for free shipping`}
                     </span>
-                    <span className="text-neutral-400">{Math.min(100, Math.round((useCart().cartTotal / useCart().FREE_SHIPPING_THRESHOLD) * 100))}%</span>
+                    <span className="text-neutral-400">{Math.min(100, Math.round((cartTotal / FREE_SHIPPING_THRESHOLD) * 100))}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-neutral-200 rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, (useCart().cartTotal / useCart().FREE_SHIPPING_THRESHOLD) * 100)}%` }}
-                      className={`h-full rounded-full ${useCart().cartTotal >= useCart().FREE_SHIPPING_THRESHOLD ? 'bg-green-500' : 'bg-orange-500'}`}
+                      animate={{ width: `${Math.min(100, (cartTotal / FREE_SHIPPING_THRESHOLD) * 100)}%` }}
+                      className={`h-full rounded-full ${cartTotal >= FREE_SHIPPING_THRESHOLD ? 'bg-green-500' : 'bg-orange-500'}`}
                     />
                   </div>
                 </div>
@@ -187,32 +216,70 @@ export default function CartDrawer() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-neutral-500">Subtotal</span>
                     <span className="text-neutral-900 font-medium">
-                      ${useCart().cartTotal.toFixed(2)}
+                      ${cartTotal.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-neutral-500">Shipping</span>
-                    <span className={useCart().shippingCost === 0 ? "text-green-600 font-medium" : "text-neutral-900 font-medium"}>
-                      {useCart().shippingCost === 0 ? "Free" : `$${useCart().shippingCost.toFixed(2)}`}
+                    <span className={shippingCost === 0 ? "text-green-600 font-medium" : "text-neutral-900 font-medium"}>
+                      {shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}`}
                     </span>
                   </div>
                   <div className="pt-2 flex items-center justify-between border-t border-neutral-200">
                     <span className="text-neutral-900 font-semibold">Total</span>
                     <span className="text-xl font-bold text-neutral-900">
-                      ${useCart().totalWithShipping.toFixed(2)}
+                      ${totalWithShipping.toFixed(2)}
                     </span>
                   </div>
                 </div>
-                
-                <Link
-                  href="/checkout"
-                  onClick={useCart().closeCart}
+                <button
+                  onClick={handleCheckout}
                   className="block w-full rounded-full bg-gradient-to-r from-orange-600 to-red-600 py-4 text-center font-medium text-white shadow-lg shadow-orange-500/30 transition-transform hover:scale-[1.02] hover:shadow-orange-500/50 active:scale-[0.98]"
                 >
                   Checkout
-                </Link>
+                </button>
               </div>
             )}
+            
+            {/* Auth Modal Overlay */}
+            <AnimatePresence>
+              {showAuthModal && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-white/90 backdrop-blur-md"
+                >
+                  <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center border border-neutral-100">
+                    <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-100 text-orange-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <h3 className="text-2xl font-light text-neutral-900 mb-2">Login Required</h3>
+                    <p className="text-neutral-500 text-sm mb-6">
+                      You need to be logged in to proceed to checkout and save your orders securely.
+                    </p>
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => {
+                          closeCart();
+                          setShowAuthModal(false);
+                          router.push("/login");
+                        }}
+                        className="w-full rounded-full bg-neutral-900 py-3 text-center font-medium text-white transition-colors hover:bg-neutral-800"
+                      >
+                        Log In or Sign Up
+                      </button>
+                      <button
+                        onClick={() => setShowAuthModal(false)}
+                        className="w-full rounded-full border border-neutral-200 py-3 text-center font-medium text-neutral-600 transition-colors hover:bg-neutral-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </>
       )}

@@ -6,24 +6,15 @@ import ProductCard from "@/components/Collection/ProductCard";
 import { createClient } from "@/utils/supabase/server";
 import { Product } from "@/data/collectionData";
 
-export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug: id } = await params;
+export default async function AllProductsPage() {
   const supabase = await createClient();
 
-  // Fetch the collection to get its name
-  const { data: collection } = await supabase
-    .from("collections")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  // Fetch products that belong to this collection
+  // Fetch all products
   const { data: productsData } = await supabase
     .from("products")
-    .select("*")
-    .eq("collection_id", id);
+    .select("*");
 
-  const displayTitle = collection?.name || "Collection";
+  const displayTitle = "All Products";
   const numProducts = productsData?.length || 0;
 
   // Map DB products to the UI format
@@ -59,7 +50,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
         {/* Info Banner */}
         <div className="mb-8 flex items-center gap-4 rounded-xl bg-orange-50 p-4 text-neutral-700">
              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-             <span className="font-medium">What are Quick Ship Fireplaces?</span>
+             <span className="font-medium">Browse our complete collection of fireplaces</span>
         </div>
 
         {/* Controls */}
@@ -82,6 +73,12 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
                 <ProductCard key={product.id} product={product} />
             ))}
         </div>
+        
+        {mappedProducts.length === 0 && (
+          <div className="py-20 text-center text-neutral-500">
+            No products available yet. An Admin needs to create some!
+          </div>
+        )}
       </div>
     </main>
   );

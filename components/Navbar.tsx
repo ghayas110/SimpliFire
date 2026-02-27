@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, useScroll, useMotionValueEvent } from "framer-motion";
-import { Menu, X, ShoppingBag } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion";
+import { Menu, X, ShoppingBag, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import CartDrawer from "./Cart/CartDrawer";
+import { createClient } from "@/utils/supabase/client";
+
 const navItems = [
-  { name: "Collections", href: "/collections/quick-ship" },
-  { name: "Technology", href: "/#technology" },
-  { name: "Inspiration", href: "/#inspiration" },
-  { name: "Support", href: "/#support" },
+  { name: "Collections", href: "/products" },
+  { name: "Technology", href: "/technology" },
+  { name: "Inspiration", href: "/inspiration" },
+  { name: "Support", href: "/support" },
 ];
 
 export default function Navbar() {
@@ -19,6 +22,24 @@ export default function Navbar() {
   const { scrollY } = useScroll();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { openCart, cartCount } = useCart();
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+  const useDarkText = !isHome || isScrolled;
+  const [session, setSession] = useState<any>(null);
+  
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 50);
@@ -55,7 +76,7 @@ export default function Navbar() {
                 key={item.name}
                 href={item.href}
                 className={`text-sm font-medium transition-colors ${
-                  isScrolled 
+                  useDarkText 
                     ? "text-[#432818]/80 hover:text-[#582F0E]" 
                     : "text-zinc-300 hover:text-white"
                 }`}
@@ -63,13 +84,25 @@ export default function Navbar() {
                 {item.name}
               </Link>
             ))}
+            {session && (
+              <Link
+                href="/accounts"
+                className={`text-sm font-medium transition-colors ${
+                  useDarkText 
+                    ? "text-[#432818]/80 hover:text-[#582F0E]" 
+                    : "text-zinc-300 hover:text-white"
+                }`}
+              >
+                Accounts
+              </Link>
+            )}
           </div>
 
           {/* Actions */}
           <div className="hidden md:flex items-center gap-4">
             <button 
               onClick={openCart}
-              className={`relative p-2 transition-colors hover:opacity-80 ${isScrolled ? "text-[#582F0E]" : "text-white"}`}
+              className={`relative p-2 transition-colors hover:opacity-80 ${useDarkText ? "text-[#582F0E]" : "text-white"}`}
             >
               <ShoppingBag width={20} height={20} />
               {cartCount > 0 && (
@@ -78,20 +111,37 @@ export default function Navbar() {
                 </span>
               )}
             </button>
-            <button className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
-              isScrolled
-                ? "bg-[#582F0E] text-white hover:bg-[#432818]"
-                : "bg-white text-black hover:bg-zinc-200"
-            }`}>
-              Get Started
-            </button>
+            {session ? (
+              <Link 
+                href="/accounts"
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                  useDarkText
+                    ? "bg-[#582F0E] text-white hover:bg-[#432818]"
+                    : "bg-white text-black hover:bg-zinc-200"
+                }`}
+              >
+                <User size={16} />
+                Profile
+              </Link>
+            ) : (
+              <Link 
+                href="/login"
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                  useDarkText
+                    ? "bg-[#582F0E] text-white hover:bg-[#432818]"
+                    : "bg-white text-black hover:bg-zinc-200"
+                }`}
+              >
+                Get Started
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu & Cart Toggle */}
           <div className="flex items-center gap-4 md:hidden">
             <button 
                 onClick={openCart}
-                className={`relative p-2 transition-colors ${isScrolled ? "text-[#582F0E]" : "text-white"}`}
+                className={`relative p-2 transition-colors ${useDarkText ? "text-[#582F0E]" : "text-white"}`}
               >
                 <ShoppingBag width={20} height={20} />
                 {cartCount > 0 && (
@@ -102,7 +152,7 @@ export default function Navbar() {
             </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`p-2 transition-colors ${isScrolled ? "text-[#582F0E]" : "text-white"}`}
+              className={`p-2 transition-colors ${useDarkText ? "text-[#582F0E]" : "text-white"}`}
             >
               {isMobileMenuOpen ? <X /> : <Menu />}
             </button>
@@ -110,31 +160,57 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-[#FDFCF8]/95 backdrop-blur-xl border-t border-[#582F0E]/10"
-          >
-            <div className="flex flex-col p-6 space-y-4">
-              {navItems.map((item) => (
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden bg-[#FDFCF8]/95 backdrop-blur-xl border-t border-[#582F0E]/10 overflow-hidden"
+            >
+              <div className="flex flex-col p-6 space-y-4">
+                {navItems.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="text-lg font-medium text-[#432818] hover:text-[#582F0E]"
+                    >
+                      {item.name}
+                    </Link>
+                  )
+                )}
+                {session && (
                   <Link
-                    key={item.name}
-                    href={item.href}
+                    href="/accounts"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="text-lg font-medium text-[#432818] hover:text-[#582F0E]"
                   >
-                    {item.name}
+                    Accounts
                   </Link>
-                )
-              )}
-              <button className="mt-4 w-full px-6 py-3 rounded-full bg-[#582F0E] text-white font-semibold">
-                Get Started
-              </button>
-            </div>
-          </motion.div>
-        )}
+                )}
+                {session ? (
+                  <Link 
+                    href="/accounts"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="mt-4 flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full bg-[#582F0E] text-white font-semibold"
+                  >
+                    <User size={18} />
+                    Profile
+                  </Link>
+                ) : (
+                  <Link 
+                    href="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="mt-4 flex items-center justify-center w-full px-6 py-3 rounded-full bg-[#582F0E] text-white font-semibold"
+                  >
+                    Sign In
+                  </Link>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
       <CartDrawer />
     </>

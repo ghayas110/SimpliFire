@@ -3,18 +3,25 @@ import Navbar from "@/components/Navbar";
 import ProductGallery from "@/components/Product/ProductGallery";
 import ProductInfo from "@/components/Product/ProductInfo";
 import ProductSpecs from "@/components/Product/ProductSpecs";
-import { products } from "@/data/productData";
+import { createClient } from "@/utils/supabase/server";
 
 export default async function ProductDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  // Fetch product data based on params.slug
-  const { slug } = await params;
-  const product = products[slug];
+  const { slug: id } = await params;
+  const supabase = await createClient();
 
-  if (!product) {
+  // Fetch product data based on params.id
+  const { data: product, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !product) {
+    console.error("Fetch error:", error, "for ID:", id);
     return (
       <main className="min-h-screen bg-neutral-50 selection:bg-orange-500/30">
         <Navbar />
@@ -25,6 +32,23 @@ export default async function ProductDetailPage({
     );
   }
 
+  const mappedProduct = {
+    id: product.id,
+    title: product.name,
+    description: product.description || "",
+    price: product.price,
+    images: product.image_url ? [product.image_url] : ["/placeholder.jpg"],
+    features: ["Authentic design", "Premium components", "Easy installation"], // Fallback sample features
+    specifications: product.specifications || {
+      "Dimensions": "See manual",
+      "Material": "Premium finish",
+    },
+    downloads: [
+      { name: "Installation Manual", url: "#" },
+      { name: "Specifications Sheet", url: "#" },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-neutral-50 selection:bg-orange-500/30">
       <Navbar />
@@ -33,24 +57,24 @@ export default async function ProductDetailPage({
         <div className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-2">
           {/* Left Column: Gallery */}
           <div className="lg:sticky lg:top-32 lg:self-start">
-            <ProductGallery images={product.images} />
+            <ProductGallery images={mappedProduct.images} />
           </div>
 
           {/* Right Column: Info */}
           <div>
             <ProductInfo
-              id={product.id}
-              image={product.images[0]}
-              title={product.title}
-              price={product.price}
-              description={product.description}
-              features={product.features}
+              id={mappedProduct.id}
+              image={mappedProduct.images[0]}
+              title={mappedProduct.title}
+              price={mappedProduct.price}
+              description={mappedProduct.description}
+              features={mappedProduct.features}
             />
             
             <div className="mt-12 border-t border-neutral-200 pt-12">
               <ProductSpecs 
-                specifications={product.specifications} 
-                downloads={product.downloads}
+                specifications={mappedProduct.specifications} 
+                downloads={mappedProduct.downloads}
               />
             </div>
           </div>

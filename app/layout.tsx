@@ -4,6 +4,7 @@ import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
 import { CartProvider } from "@/context/CartContext";
 import { ComparisonProvider } from "@/context/ComparisonContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import ComparisonBar from "@/components/Comparison/ComparisonBar";
 import ChatWidget from "@/components/Marketing/ChatWidget";
 
@@ -28,18 +29,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
-        <CartProvider>
-          <ComparisonProvider>
-            <SmoothScroll />
-            {children}
-            <ComparisonBar />
-            <ChatWidget />
-          </ComparisonProvider>
-        </CartProvider>
+        <ThemeProvider>
+          <CartProvider>
+            <ComparisonProvider>
+              <SmoothScroll />
+              {children}
+              <ComparisonBar />
+              <ChatWidget />
+            </ComparisonProvider>
+          </CartProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
