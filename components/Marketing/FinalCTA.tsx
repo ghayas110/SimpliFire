@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 
 export default function FinalCTA() {
   return (
@@ -9,9 +10,11 @@ export default function FinalCTA() {
         Make It the Centerpiece.
       </h2>
       <p className="mb-10 text-lg text-[#432818]/70">Join the Hearth & Home family today.</p>
-      <button className="rounded-full bg-[#582F0E] px-8 py-4 text-sm font-medium tracking-wide text-white transition-transform hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl">
-        Shop SimpliFire
-      </button>
+      <Link href="/products">
+        <button className="rounded-full bg-[#582F0E] px-8 py-4 text-sm font-medium tracking-wide text-white transition-transform hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl">
+          Shop SimpliFire
+        </button>
+      </Link>
     </section>
   );
 }
